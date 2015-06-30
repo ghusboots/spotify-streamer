@@ -13,8 +13,11 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 
@@ -108,7 +111,13 @@ public class SearchActivityFragment extends Fragment {
 
             Artist artist = artists.get(position);
 
-            ((TextView)row.findViewById(R.id.list_item_artist_textview)).setText(artist.name);
+            ((TextView)row.findViewById(R.id.list_item_artist_name)).setText(artist.name);
+            if (artist.images.size() > 0) {
+                Picasso.with(this.context).load(artist.images.get(0).url).into((ImageView)row.findViewById(R.id.list_item_artist_thumbnail));
+            } else {
+                ((ImageView)row.findViewById(R.id.list_item_artist_thumbnail)).setImageResource(R.drawable.ic_broken_image_black_48dp);
+            }
+
 
             return row;
         }
