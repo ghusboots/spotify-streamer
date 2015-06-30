@@ -2,13 +2,13 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/list_item_artist">
+    android:id="@+id/list_item_track">
 
     <ImageView
         android:layout_width="64dp"
         android:layout_height="64dp"
         android:layout_centerVertical="true"
-        android:id="@+id/list_item_artist_thumbnail"
+        android:id="@+id/list_item_track_thumbnail"
         android:layout_marginBottom="@dimen/activity_vertical_margin"
         android:layout_marginTop="@dimen/activity_vertical_margin"
         android:contentDescription="@null"
@@ -22,8 +22,8 @@
         android:paddingEnd="?android:listPreferredItemPaddingEnd"
         android:paddingStart="?android:listPreferredItemPaddingStart"
         android:layout_centerVertical="true"
-        android:id="@+id/list_item_artist_name"
-        android:layout_toEndOf="@id/list_item_artist_thumbnail"
+        android:id="@+id/list_item_track_title"
+        android:layout_toEndOf="@id/list_item_track_thumbnail"
         android:layout_marginStart="@dimen/activity_horizontal_margin"
         />
 </RelativeLayout>

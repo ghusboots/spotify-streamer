@@ -2,6 +2,7 @@ package me.danco.spotifystreamer;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -11,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -49,16 +51,27 @@ public class SearchActivityFragment extends Fragment {
         searchBox.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_SEARCH || (event.getAction() == KeyEvent.KEYCODE_ENTER)) {
-                    new ArtistSearchTask().execute(v.getText().toString());
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || (event.getAction() == KeyEvent.KEYCODE_ENTER)) {
+                new ArtistSearchTask().execute(v.getText().toString());
 
-                    InputMethodManager inputMethodManager = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-                    inputMethodManager.hideSoftInputFromWindow(searchBox.getWindowToken(), 0);
+                InputMethodManager inputMethodManager = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                inputMethodManager.hideSoftInputFromWindow(searchBox.getWindowToken(), 0);
 
-                    return true;
-                }
+                return true;
+            }
 
-                return false;
+            return false;
+            }
+        });
+
+        artistList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent topTrackIntent = new Intent(getActivity(), TopTracksActivity.class);
+                Artist artist = (Artist)view.getTag();
+                topTrackIntent.putExtra("artistId", artist.id);
+                topTrackIntent.putExtra("artistName", artist.name);
+                startActivity(topTrackIntent);
             }
         });
 
@@ -110,6 +123,7 @@ public class SearchActivityFragment extends Fragment {
             }
 
             Artist artist = artists.get(position);
+            row.setTag(artist);
 
             ((TextView)row.findViewById(R.id.list_item_artist_name)).setText(artist.name);
             if (artist.images.size() > 0) {
@@ -117,7 +131,6 @@ public class SearchActivityFragment extends Fragment {
             } else {
                 ((ImageView)row.findViewById(R.id.list_item_artist_thumbnail)).setImageResource(R.drawable.ic_broken_image_black_48dp);
             }
-
 
             return row;
         }
