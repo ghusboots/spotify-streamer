@@ -18,6 +18,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
@@ -39,9 +40,16 @@ public class SearchActivityFragment extends Fragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        this.setRetainInstance(true);
         artistAdapter = new ArtistAdapter(getActivity(), R.layout.list_item_artist, new ArrayList<Artist>());
 
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_search, container, false);
 
         ListView artistList = (ListView)rootView.findViewById(R.id.list_artists);
@@ -98,7 +106,11 @@ public class SearchActivityFragment extends Fragment {
             super.onPostExecute(artists);
 
             artistAdapter.clear();
-            artistAdapter.addAll(artists);
+            if (artists.size() == 0) {
+                Toast.makeText(getActivity(), getActivity().getString(R.string.search_no_results), Toast.LENGTH_LONG).show();
+            } else {
+                artistAdapter.addAll(artists);
+            }
         }
     }
 

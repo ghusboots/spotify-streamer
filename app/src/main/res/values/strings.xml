@@ -4,4 +4,5 @@
     <string name="action_settings">Settings</string>
     <string name="edit_search_hint">Enter the name of an artist</string>
     <string name="title_activity_top_tracks">Top 10 Tracks</string>
+    <string name="search_no_results">We couldn\'t find that artist. Please try refining your search.</string>
 </resources>

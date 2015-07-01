@@ -12,18 +12,32 @@
         android:layout_marginBottom="@dimen/activity_vertical_margin"
         android:layout_marginTop="@dimen/activity_vertical_margin"
         android:contentDescription="@null"
+        android:gravity="center_vertical"
         />
 
-    <TextView
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:textAppearanceMedium"
-        android:minHeight="?android:attr/listPreferredItemHeight"
         android:paddingEnd="?android:listPreferredItemPaddingEnd"
         android:paddingStart="?android:listPreferredItemPaddingStart"
         android:layout_centerVertical="true"
-        android:id="@+id/list_item_track_title"
+        android:gravity="center_vertical"
         android:layout_toEndOf="@id/list_item_track_thumbnail"
         android:layout_marginStart="@dimen/activity_horizontal_margin"
-        />
+        android:minHeight="?android:attr/listPreferredItemHeight"
+        android:orientation="vertical"
+        >
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:textAppearanceMedium"
+            android:id="@+id/list_item_track_title"
+            />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:textAppearanceSmall"
+            android:id="@+id/list_item_track_album"
+            />
+    </LinearLayout>
 </RelativeLayout>

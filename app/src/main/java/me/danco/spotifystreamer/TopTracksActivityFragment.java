@@ -37,10 +37,15 @@ public class TopTracksActivityFragment extends Fragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        this.setRetainInstance(true);
         this.trackAdapter = new TrackAdapter(getActivity(), R.layout.list_item_track, new ArrayList<Track>());
+        new TopTracksTask().execute(getActivity().getIntent().getStringExtra("artistId"));
+    }
 
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_top_tracks, container, false);
         Intent intent = getActivity().getIntent();
 
@@ -51,8 +56,6 @@ public class TopTracksActivityFragment extends Fragment {
 
         ListView trackList = (ListView)rootView.findViewById(R.id.list_tracks);
         trackList.setAdapter(trackAdapter);
-
-        new TopTracksTask().execute(getActivity().getIntent().getStringExtra("artistId"));
 
         return rootView;
     }
@@ -109,6 +112,8 @@ public class TopTracksActivityFragment extends Fragment {
             row.setTag(track);
 
             ((TextView)row.findViewById(R.id.list_item_track_title)).setText(track.name);
+            ((TextView)row.findViewById(R.id.list_item_track_album)).setText(track.album.name);
+
             if (track.album.images.size() > 0) {
                 Picasso.with(this.context).load(track.album.images.get(0).url).into((ImageView)row.findViewById(R.id.list_item_track_thumbnail));
             } else {
