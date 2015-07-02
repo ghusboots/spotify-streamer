@@ -8,6 +8,7 @@ import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +16,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
@@ -70,10 +72,14 @@ public class TopTracksActivityFragment extends Fragment {
 
             HashMap<String, Object> queryMap = new HashMap<>();
             queryMap.put("country", "US");
-            Tracks topTracks = spotify.getArtistTopTrack(params[0], queryMap);
+            try {
+                Tracks topTracks = spotify.getArtistTopTrack(params[0], queryMap);
 
-            for (Track track : topTracks.tracks) {
-                tracks.add(track);
+                for (Track track : topTracks.tracks) {
+                    tracks.add(track);
+                }
+            } catch (Exception ex) {
+                Log.d(TopTracksTask.class.getName(), ex.toString());
             }
 
             return tracks;
@@ -84,7 +90,11 @@ public class TopTracksActivityFragment extends Fragment {
             super.onPostExecute(tracks);
 
             trackAdapter.clear();
-            trackAdapter.addAll(tracks);
+            if (tracks.size() == 0) {
+                Toast.makeText(getActivity(), getActivity().getString(R.string.tracks_no_connection), Toast.LENGTH_LONG).show();
+            } else {
+                trackAdapter.addAll(tracks);
+            }
         }
     }
 

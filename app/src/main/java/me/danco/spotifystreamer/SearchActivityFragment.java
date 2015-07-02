@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -91,14 +92,20 @@ public class SearchActivityFragment extends Fragment {
         protected ArrayList<Artist> doInBackground(String... params) {
             SpotifyApi api = new SpotifyApi();
             SpotifyService spotify = api.getService();
-            ArrayList<Artist> artistNames = new ArrayList<>();
+            ArrayList<Artist> artistList = new ArrayList<>();
 
-            ArtistsPager artists = spotify.searchArtists(params[0]);
-            for (Artist a : artists.artists.items) {
-                artistNames.add(a);
+            try {
+                ArtistsPager artists = spotify.searchArtists(params[0]);
+
+                for (Artist a : artists.artists.items) {
+                    artistList.add(a);
+                }
+            } catch (Exception ex) {
+                Log.d(ArtistSearchTask.class.getName(), ex.toString());
+                return null;
             }
 
-            return artistNames;
+            return artistList;
         }
 
         @Override
@@ -106,7 +113,9 @@ public class SearchActivityFragment extends Fragment {
             super.onPostExecute(artists);
 
             artistAdapter.clear();
-            if (artists.size() == 0) {
+            if (artists == null) {
+                Toast.makeText(getActivity(), getActivity().getString(R.string.search_no_connection), Toast.LENGTH_LONG).show();
+            } else if (artists.size() == 0) {
                 Toast.makeText(getActivity(), getActivity().getString(R.string.search_no_results), Toast.LENGTH_LONG).show();
             } else {
                 artistAdapter.addAll(artists);
