@@ -55,6 +55,7 @@ public class TopTracksActivityFragment extends Fragment {
             } else {
                 new TopTracksTask().execute(getActivity().getIntent().getStringExtra("artistId"));
             }
+
             Log.v(TopTracksActivityFragment.class.getName(), "Request from network");
         } else {
             this.trackList = savedInstanceState.getParcelableArrayList("tracks");
@@ -121,40 +122,4 @@ public class TopTracksActivityFragment extends Fragment {
             }
         }
     }
-
-    @SuppressWarnings("SameParameterValue")
-    public final class TrackAdapter extends ArrayAdapter<TrackParcelable> {
-        private final Context context;
-        private final int layoutResourceId;
-        private ArrayList<TrackParcelable> tracks = null;
-
-        public TrackAdapter(Context context, int layoutResourceId, ArrayList<TrackParcelable> tracks) {
-            super(context, layoutResourceId, tracks);
-            this.context = context;
-            this.layoutResourceId = layoutResourceId;
-            this.tracks = tracks;
-        }
-
-        @Override
-        public View getView(int position, View row, ViewGroup parent) {
-            if (row == null) {
-                LayoutInflater inflater = ((Activity)context).getLayoutInflater();
-                row = inflater.inflate(this.layoutResourceId, parent, false);
-            }
-
-            TrackParcelable track = tracks.get(position);
-            row.setTag(track);
-
-            ((TextView)row.findViewById(R.id.list_item_track_title)).setText(track.title);
-            ((TextView)row.findViewById(R.id.list_item_track_album)).setText(track.albumTitle);
-
-            if (track.albumThumbnail != null) {
-                Picasso.with(this.context).load(track.albumThumbnail).into((ImageView)row.findViewById(R.id.list_item_track_thumbnail));
-            } else {
-                ((ImageView)row.findViewById(R.id.list_item_track_thumbnail)).setImageResource(R.drawable.ic_broken_image_black_48dp);
-            }
-            return row;
-        }
-    }
-
 }
