@@ -7,4 +7,5 @@
     <string name="search_no_results">We couldn\'t find that artist. Please try refining your search.</string>
     <string name="search_no_connection">There seems to have been a problem fetching data from Spotify. Please check your internet connection.</string>
     <string name="tracks_no_connection">We had a problem finding any top tracks for this artist.</string>
+    <string name="no_connection">We are having trouble connecting to the internet.</string>
 </resources>

@@ -3,6 +3,8 @@ package me.danco.spotifystreamer;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -36,25 +38,43 @@ import kaaes.spotify.webapi.android.models.ArtistsPager;
  */
 public class SearchActivityFragment extends Fragment {
     private ArtistAdapter artistAdapter;
+    private ArrayList<ArtistParcelable> artistList;
 
     public SearchActivityFragment() {
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList("artists", this.artistList);
+        super.onSaveInstanceState(outState);
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        this.setRetainInstance(true);
-        artistAdapter = new ArtistAdapter(getActivity(), R.layout.list_item_artist, new ArrayList<Artist>());
+        ConnectivityManager connectivityManager = (ConnectivityManager) this.getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
 
+        if (networkInfo == null || !networkInfo.isConnected()) {
+            Toast.makeText(this.getActivity(), this.getActivity().getString(R.string.no_connection), Toast.LENGTH_LONG).show();
+        }
+
+        if (savedInstanceState == null || !savedInstanceState.containsKey("artists")) {
+            this.artistList = new ArrayList<>();
+        } else {
+            this.artistList = savedInstanceState.getParcelableArrayList("artists");
+        }
+
+        artistAdapter = new ArtistAdapter(getActivity(), R.layout.list_item_artist, this.artistList);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_search, container, false);
 
-        ListView artistList = (ListView)rootView.findViewById(R.id.list_artists);
-        artistList.setAdapter(artistAdapter);
+        ListView artistListView = (ListView)rootView.findViewById(R.id.list_artists);
+        artistListView.setAdapter(artistAdapter);
 
         final EditText searchBox = (EditText) rootView.findViewById(R.id.edit_search);
         searchBox.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -73,11 +93,11 @@ public class SearchActivityFragment extends Fragment {
             }
         });
 
-        artistList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        artistListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent topTrackIntent = new Intent(getActivity(), TopTracksActivity.class);
-                Artist artist = (Artist)view.getTag();
+                ArtistParcelable artist = (ArtistParcelable) view.getTag();
                 topTrackIntent.putExtra("artistId", artist.id);
                 topTrackIntent.putExtra("artistName", artist.name);
                 startActivity(topTrackIntent);
@@ -87,18 +107,18 @@ public class SearchActivityFragment extends Fragment {
         return rootView;
     }
 
-    private class ArtistSearchTask extends AsyncTask<String, Void, ArrayList<Artist>> {
+    private class ArtistSearchTask extends AsyncTask<String, Void, ArrayList<ArtistParcelable>> {
         @Override
-        protected ArrayList<Artist> doInBackground(String... params) {
+        protected ArrayList<ArtistParcelable> doInBackground(String... params) {
             SpotifyApi api = new SpotifyApi();
             SpotifyService spotify = api.getService();
-            ArrayList<Artist> artistList = new ArrayList<>();
+            artistList = new ArrayList<>();
 
             try {
                 ArtistsPager artists = spotify.searchArtists(params[0]);
 
                 for (Artist a : artists.artists.items) {
-                    artistList.add(a);
+                    artistList.add(new ArtistParcelable(a.id, a.name, a.images.size() > 0 ? a.images.get(0).url : null));
                 }
             } catch (Exception ex) {
                 Log.d(ArtistSearchTask.class.getName(), ex.toString());
@@ -109,7 +129,7 @@ public class SearchActivityFragment extends Fragment {
         }
 
         @Override
-        protected void onPostExecute(ArrayList<Artist> artists) {
+        protected void onPostExecute(ArrayList<ArtistParcelable> artists) {
             super.onPostExecute(artists);
 
             artistAdapter.clear();
@@ -124,12 +144,12 @@ public class SearchActivityFragment extends Fragment {
     }
 
     @SuppressWarnings("SameParameterValue")
-    public final class ArtistAdapter extends ArrayAdapter<Artist> {
+    private final class ArtistAdapter extends ArrayAdapter<ArtistParcelable> {
         private final Context context;
         private final int layoutResourceId;
-        private ArrayList<Artist> artists = null;
+        private ArrayList<ArtistParcelable> artists = null;
 
-        public ArtistAdapter(Context context, int layoutResourceId, ArrayList<Artist> artists) {
+        public ArtistAdapter(Context context, int layoutResourceId, ArrayList<ArtistParcelable> artists) {
             super(context, layoutResourceId, artists);
             this.context = context;
             this.layoutResourceId = layoutResourceId;
@@ -143,12 +163,12 @@ public class SearchActivityFragment extends Fragment {
                 row = inflater.inflate(this.layoutResourceId, parent, false);
             }
 
-            Artist artist = artists.get(position);
+            ArtistParcelable artist = artists.get(position);
             row.setTag(artist);
 
             ((TextView)row.findViewById(R.id.list_item_artist_name)).setText(artist.name);
-            if (artist.images.size() > 0) {
-                Picasso.with(this.context).load(artist.images.get(0).url).into((ImageView)row.findViewById(R.id.list_item_artist_thumbnail));
+            if (artist.thumbnail != null) {
+                Picasso.with(this.context).load(artist.thumbnail).into((ImageView)row.findViewById(R.id.list_item_artist_thumbnail));
             } else {
                 ((ImageView)row.findViewById(R.id.list_item_artist_thumbnail)).setImageResource(R.drawable.ic_broken_image_black_48dp);
             }

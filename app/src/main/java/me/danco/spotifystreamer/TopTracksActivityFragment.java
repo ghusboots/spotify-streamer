@@ -3,6 +3,8 @@ package me.danco.spotifystreamer;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -34,6 +36,7 @@ import kaaes.spotify.webapi.android.models.Tracks;
  */
 public class TopTracksActivityFragment extends Fragment {
     private TrackAdapter trackAdapter;
+    private ArrayList<TrackParcelable> trackList;
 
     public TopTracksActivityFragment() {
     }
@@ -41,9 +44,30 @@ public class TopTracksActivityFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        this.setRetainInstance(true);
-        this.trackAdapter = new TrackAdapter(getActivity(), R.layout.list_item_track, new ArrayList<Track>());
-        new TopTracksTask().execute(getActivity().getIntent().getStringExtra("artistId"));
+
+        ConnectivityManager connectivityManager = (ConnectivityManager) this.getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+
+        if (savedInstanceState == null || !savedInstanceState.containsKey("tracks")) {
+            this.trackList = new ArrayList<>();
+            if (networkInfo == null || !networkInfo.isConnected()) {
+                Toast.makeText(this.getActivity(), this.getActivity().getString(R.string.no_connection), Toast.LENGTH_LONG).show();
+            } else {
+                new TopTracksTask().execute(getActivity().getIntent().getStringExtra("artistId"));
+            }
+            Log.v(TopTracksActivityFragment.class.getName(), "Request from network");
+        } else {
+            this.trackList = savedInstanceState.getParcelableArrayList("tracks");
+            Log.v(TopTracksActivityFragment.class.getName(), "pull from saved instance state");
+        }
+
+        this.trackAdapter = new TrackAdapter(getActivity(), R.layout.list_item_track, this.trackList);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList("tracks", trackList);
+        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -62,12 +86,12 @@ public class TopTracksActivityFragment extends Fragment {
         return rootView;
     }
 
-    private class TopTracksTask extends AsyncTask<String, Void, ArrayList<Track>> {
+    private class TopTracksTask extends AsyncTask<String, Void, ArrayList<TrackParcelable>> {
         @Override
-        protected ArrayList<Track> doInBackground(String... params) {
+        protected ArrayList<TrackParcelable> doInBackground(String... params) {
             SpotifyApi api = new SpotifyApi();
             SpotifyService spotify = api.getService();
-            ArrayList<Track> tracks = new ArrayList<>();
+            ArrayList<TrackParcelable> tracks = new ArrayList<>();
 
 
             HashMap<String, Object> queryMap = new HashMap<>();
@@ -76,7 +100,7 @@ public class TopTracksActivityFragment extends Fragment {
                 Tracks topTracks = spotify.getArtistTopTrack(params[0], queryMap);
 
                 for (Track track : topTracks.tracks) {
-                    tracks.add(track);
+                    tracks.add(new TrackParcelable(track.id, track.name, track.album.images.size() > 0 ? track.album.images.get(0).url : null, track.album.name));
                 }
             } catch (Exception ex) {
                 Log.d(TopTracksTask.class.getName(), ex.toString());
@@ -86,7 +110,7 @@ public class TopTracksActivityFragment extends Fragment {
         }
 
         @Override
-        protected void onPostExecute(ArrayList<Track> tracks) {
+        protected void onPostExecute(ArrayList<TrackParcelable> tracks) {
             super.onPostExecute(tracks);
 
             trackAdapter.clear();
@@ -99,12 +123,12 @@ public class TopTracksActivityFragment extends Fragment {
     }
 
     @SuppressWarnings("SameParameterValue")
-    public final class TrackAdapter extends ArrayAdapter<Track> {
+    public final class TrackAdapter extends ArrayAdapter<TrackParcelable> {
         private final Context context;
         private final int layoutResourceId;
-        private ArrayList<Track> tracks = null;
+        private ArrayList<TrackParcelable> tracks = null;
 
-        public TrackAdapter(Context context, int layoutResourceId, ArrayList<Track> tracks) {
+        public TrackAdapter(Context context, int layoutResourceId, ArrayList<TrackParcelable> tracks) {
             super(context, layoutResourceId, tracks);
             this.context = context;
             this.layoutResourceId = layoutResourceId;
@@ -118,18 +142,17 @@ public class TopTracksActivityFragment extends Fragment {
                 row = inflater.inflate(this.layoutResourceId, parent, false);
             }
 
-            Track track = tracks.get(position);
+            TrackParcelable track = tracks.get(position);
             row.setTag(track);
 
-            ((TextView)row.findViewById(R.id.list_item_track_title)).setText(track.name);
-            ((TextView)row.findViewById(R.id.list_item_track_album)).setText(track.album.name);
+            ((TextView)row.findViewById(R.id.list_item_track_title)).setText(track.title);
+            ((TextView)row.findViewById(R.id.list_item_track_album)).setText(track.albumTitle);
 
-            if (track.album.images.size() > 0) {
-                Picasso.with(this.context).load(track.album.images.get(0).url).into((ImageView)row.findViewById(R.id.list_item_track_thumbnail));
+            if (track.albumThumbnail != null) {
+                Picasso.with(this.context).load(track.albumThumbnail).into((ImageView)row.findViewById(R.id.list_item_track_thumbnail));
             } else {
                 ((ImageView)row.findViewById(R.id.list_item_track_thumbnail)).setImageResource(R.drawable.ic_broken_image_black_48dp);
             }
-
             return row;
         }
     }
