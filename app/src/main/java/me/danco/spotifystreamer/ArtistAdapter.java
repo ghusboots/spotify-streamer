@@ -13,7 +13,7 @@ import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 
-public final class ArtistAdapter extends ArrayAdapter<ArtistParcelable> {
+final class ArtistAdapter extends ArrayAdapter<ArtistParcelable> {
     private final Context context;
     private final int layoutResourceId;
     private ArrayList<ArtistParcelable> artists = null;
@@ -27,21 +27,36 @@ public final class ArtistAdapter extends ArrayAdapter<ArtistParcelable> {
 
     @Override
     public View getView(int position, View row, ViewGroup parent) {
+        ViewHolder holder;
+
         if (row == null) {
             LayoutInflater inflater = ((Activity)context).getLayoutInflater();
             row = inflater.inflate(this.layoutResourceId, parent, false);
+
+            holder = new ViewHolder();
+            holder.name = (TextView)row.findViewById(R.id.list_item_artist_name);
+            holder.thumbnail = (ImageView)row.findViewById(R.id.list_item_artist_thumbnail);
+            row.setTag(R.id.ArtistAdapter_holder, holder);
+        } else {
+            holder = (ViewHolder)row.getTag(R.id.ArtistAdapter_holder);
         }
 
         ArtistParcelable artist = artists.get(position);
-        row.setTag(artist);
+        row.setTag(R.id.ArtistAdapter_data, artist);
 
-        ((TextView)row.findViewById(R.id.list_item_artist_name)).setText(artist.name);
+        holder.name.setText(artist.name);
         if (artist.thumbnail != null) {
-            Picasso.with(this.context).load(artist.thumbnail).into((ImageView)row.findViewById(R.id.list_item_artist_thumbnail));
+            Picasso.with(this.context).load(artist.thumbnail).into(holder.thumbnail);
         } else {
-            ((ImageView)row.findViewById(R.id.list_item_artist_thumbnail)).setImageResource(R.drawable.ic_broken_image_black_48dp);
+            holder.thumbnail.setImageResource(R.drawable.ic_broken_image_black_48dp);
         }
 
         return row;
+    }
+
+    private static class ViewHolder {
+        public ImageView thumbnail;
+
+        public TextView name;
     }
 }

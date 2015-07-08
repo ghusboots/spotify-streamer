@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item type="id" name="TrackAdapter_holder" />
+    <item type="id" name="TrackAdapter_data" />
+    <item type="id" name="ArtistAdapter_data" />
+    <item type="id" name="ArtistAdapter_holder" />
+</resources>

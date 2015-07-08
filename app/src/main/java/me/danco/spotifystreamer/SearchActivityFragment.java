@@ -1,6 +1,5 @@
 package me.danco.spotifystreamer;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
@@ -16,14 +15,10 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 
@@ -97,7 +92,7 @@ public class SearchActivityFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent topTrackIntent = new Intent(getActivity(), TopTracksActivity.class);
-                ArtistParcelable artist = (ArtistParcelable) view.getTag();
+                ArtistParcelable artist = (ArtistParcelable) view.getTag(R.id.ArtistAdapter_data);
                 topTrackIntent.putExtra("artistId", artist.id);
                 topTrackIntent.putExtra("artistName", artist.name);
                 startActivity(topTrackIntent);

@@ -27,22 +27,41 @@ public class TrackAdapter extends ArrayAdapter<TrackParcelable> {
 
     @Override
     public View getView(int position, View row, ViewGroup parent) {
+        ViewHolder holder;
+
         if (row == null) {
             LayoutInflater inflater = ((Activity)context).getLayoutInflater();
             row = inflater.inflate(this.layoutResourceId, parent, false);
+
+            holder = new ViewHolder();
+            holder.albumThumbnail = (ImageView)row.findViewById(R.id.list_item_track_thumbnail);
+            holder.albumTitle = (TextView)row.findViewById(R.id.list_item_track_album);
+            holder.title = (TextView)row.findViewById(R.id.list_item_track_title);
+            row.setTag(R.id.TrackAdapter_holder, holder);
+        } else {
+            holder = (ViewHolder)row.getTag(R.id.TrackAdapter_holder);
         }
 
         TrackParcelable track = tracks.get(position);
-        row.setTag(track);
+        row.setTag(R.id.TrackAdapter_data, track);
 
-        ((TextView)row.findViewById(R.id.list_item_track_title)).setText(track.title);
-        ((TextView)row.findViewById(R.id.list_item_track_album)).setText(track.albumTitle);
+        holder.title.setText(track.title);
+        holder.albumTitle.setText(track.albumTitle);
 
         if (track.albumThumbnail != null) {
-            Picasso.with(this.context).load(track.albumThumbnail).into((ImageView)row.findViewById(R.id.list_item_track_thumbnail));
+            Picasso.with(this.context).load(track.albumThumbnail).into(holder.albumThumbnail);
         } else {
-            ((ImageView)row.findViewById(R.id.list_item_track_thumbnail)).setImageResource(R.drawable.ic_broken_image_black_48dp);
+            holder.albumThumbnail.setImageResource(R.drawable.ic_broken_image_black_48dp);
         }
+
         return row;
+    }
+
+    private static class ViewHolder {
+        public ImageView albumThumbnail;
+
+        public TextView albumTitle;
+
+        public TextView title;
     }
 }
