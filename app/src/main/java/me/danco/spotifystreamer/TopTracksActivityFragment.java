@@ -1,11 +1,9 @@
 package me.danco.spotifystreamer;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
@@ -14,21 +12,21 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
-
-import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.Executors;
 
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Track;
 import kaaes.spotify.webapi.android.models.Tracks;
+import retrofit.Callback;
+import retrofit.RetrofitError;
+import retrofit.android.MainThreadExecutor;
+import retrofit.client.Response;
 
 
 /**
@@ -50,16 +48,38 @@ public class TopTracksActivityFragment extends Fragment {
 
         if (savedInstanceState == null || !savedInstanceState.containsKey("tracks")) {
             this.trackList = new ArrayList<>();
+
             if (networkInfo == null || !networkInfo.isConnected()) {
                 Toast.makeText(this.getActivity(), this.getActivity().getString(R.string.no_connection), Toast.LENGTH_LONG).show();
             } else {
-                new TopTracksTask().execute(getActivity().getIntent().getStringExtra("artistId"));
-            }
+                SpotifyApi api = new SpotifyApi(Executors.newSingleThreadExecutor(), new MainThreadExecutor());
+                SpotifyService spotify = api.getService();
 
-            Log.v(TopTracksActivityFragment.class.getName(), "Request from network");
+                HashMap<String, Object> queryMap = new HashMap<>();
+                queryMap.put("country", "US");
+                spotify.getArtistTopTrack(getActivity().getIntent().getStringExtra("artistId"), queryMap, new Callback<Tracks>() {
+                    @Override
+                    public void success(Tracks tracks, Response response) {
+                        if (tracks.tracks.size() > 0) {
+                            for (Track track : tracks.tracks) {
+                                trackList.add(new TrackParcelable(track.id, track.name, track.album.images.size() > 0 ? track.album.images.get(0).url : null, track.album.name));
+                            }
+
+                            trackAdapter.notifyDataSetChanged();
+                        } else {
+                            Toast.makeText(getActivity(), getActivity().getString(R.string.tracks_no_connection), Toast.LENGTH_LONG).show();
+                        }
+                    }
+
+                    @Override
+                    public void failure(RetrofitError retrofitError) {
+                        Log.e("Top tracks failure", retrofitError.toString());
+                        Toast.makeText(getActivity(), getActivity().getString(R.string.tracks_no_connection), Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
         } else {
             this.trackList = savedInstanceState.getParcelableArrayList("tracks");
-            Log.v(TopTracksActivityFragment.class.getName(), "pull from saved instance state");
         }
 
         this.trackAdapter = new TrackAdapter(getActivity(), R.layout.list_item_track, this.trackList);
@@ -85,41 +105,5 @@ public class TopTracksActivityFragment extends Fragment {
         trackList.setAdapter(trackAdapter);
 
         return rootView;
-    }
-
-    private class TopTracksTask extends AsyncTask<String, Void, ArrayList<TrackParcelable>> {
-        @Override
-        protected ArrayList<TrackParcelable> doInBackground(String... params) {
-            SpotifyApi api = new SpotifyApi();
-            SpotifyService spotify = api.getService();
-            ArrayList<TrackParcelable> tracks = new ArrayList<>();
-
-
-            HashMap<String, Object> queryMap = new HashMap<>();
-            queryMap.put("country", "US");
-            try {
-                Tracks topTracks = spotify.getArtistTopTrack(params[0], queryMap);
-
-                for (Track track : topTracks.tracks) {
-                    tracks.add(new TrackParcelable(track.id, track.name, track.album.images.size() > 0 ? track.album.images.get(0).url : null, track.album.name));
-                }
-            } catch (Exception ex) {
-                Log.d(TopTracksTask.class.getName(), ex.toString());
-            }
-
-            return tracks;
-        }
-
-        @Override
-        protected void onPostExecute(ArrayList<TrackParcelable> tracks) {
-            super.onPostExecute(tracks);
-
-            trackAdapter.clear();
-            if (tracks.size() == 0) {
-                Toast.makeText(getActivity(), getActivity().getString(R.string.tracks_no_connection), Toast.LENGTH_LONG).show();
-            } else {
-                trackAdapter.addAll(tracks);
-            }
-        }
     }
 }

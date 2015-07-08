@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
@@ -21,11 +20,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.concurrent.Executors;
 
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.ArtistsPager;
+import retrofit.Callback;
+import retrofit.RetrofitError;
+import retrofit.android.MainThreadExecutor;
+import retrofit.client.Response;
 
 
 /**
@@ -76,7 +80,33 @@ public class SearchActivityFragment extends Fragment {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
             if (actionId == EditorInfo.IME_ACTION_SEARCH || (event.getAction() == KeyEvent.KEYCODE_ENTER)) {
-                new ArtistSearchTask().execute(v.getText().toString());
+                SpotifyApi api = new SpotifyApi(Executors.newSingleThreadExecutor(), new MainThreadExecutor());
+                SpotifyService spotify = api.getService();
+
+                spotify.searchArtists(v.getText().toString(), new Callback<ArtistsPager>() {
+                    @Override
+                    public void success(ArtistsPager artistsPager, Response response) {
+                        artistList.clear();
+
+                        if (artistsPager.artists.total > 0) {
+                            for (Artist a : artistsPager.artists.items) {
+                                artistList.add(new ArtistParcelable(a.id, a.name, a.images.size() > 0 ? a.images.get(0).url : null));
+                            }
+                        } else {
+                            Toast.makeText(getActivity(), getActivity().getString(R.string.search_no_results), Toast.LENGTH_LONG).show();
+                        }
+
+                        artistAdapter.notifyDataSetChanged();
+                    }
+
+                    @Override
+                    public void failure(RetrofitError retrofitError) {
+                        Log.e("Artist search failure", retrofitError.toString());
+                        Toast.makeText(getActivity(), getActivity().getString(R.string.search_no_connection), Toast.LENGTH_LONG).show();
+                    }
+
+
+                });
 
                 InputMethodManager inputMethodManager = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
                 inputMethodManager.hideSoftInputFromWindow(searchBox.getWindowToken(), 0);
@@ -100,41 +130,5 @@ public class SearchActivityFragment extends Fragment {
         });
 
         return rootView;
-    }
-
-    private class ArtistSearchTask extends AsyncTask<String, Void, ArrayList<ArtistParcelable>> {
-        @Override
-        protected ArrayList<ArtistParcelable> doInBackground(String... params) {
-            SpotifyApi api = new SpotifyApi();
-            SpotifyService spotify = api.getService();
-            artistList = new ArrayList<>();
-
-            try {
-                ArtistsPager artists = spotify.searchArtists(params[0]);
-
-                for (Artist a : artists.artists.items) {
-                    artistList.add(new ArtistParcelable(a.id, a.name, a.images.size() > 0 ? a.images.get(0).url : null));
-                }
-            } catch (Exception ex) {
-                Log.d(ArtistSearchTask.class.getName(), ex.toString());
-                return null;
-            }
-
-            return artistList;
-        }
-
-        @Override
-        protected void onPostExecute(ArrayList<ArtistParcelable> artists) {
-            super.onPostExecute(artists);
-
-            artistAdapter.clear();
-            if (artists == null) {
-                Toast.makeText(getActivity(), getActivity().getString(R.string.search_no_connection), Toast.LENGTH_LONG).show();
-            } else if (artists.size() == 0) {
-                Toast.makeText(getActivity(), getActivity().getString(R.string.search_no_results), Toast.LENGTH_LONG).show();
-            } else {
-                artistAdapter.addAll(artists);
-            }
-        }
     }
 }
